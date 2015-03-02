@@ -31,10 +31,10 @@ mixer(2, :) = par.length * par.gains.thrust * [0, 1, 0, -1];
 mixer(3, :) = par.length * par.gains.thrust * [-1, 0, 1, 0];
 mixer(4, :) = par.gains.moment_scale * par.gains.thrust * [-1, 1, -1, 1]; 
 
-[kpos, kvel, krot, kagv] = deal(3.82, 3.51, 4.82, 4.06);
+[kpos, kvel, krot, kagv] = deal(4.12, 3.22, 4.41, 3.64); 
 
 % Call clear each time to make sure that you clean up old pub/sub objects
-clear odomsub imusub pwmpub;
+clear odomsub imusub pwmpub pathpub;
 
 odomsub = ipc_bridge.createSubscriber('nav_msgs', 'Odometry', 'odom');
 imusub = ipc_bridge.createSubscriber('sensor_msgs', 'Imu', 'imu');
@@ -49,22 +49,17 @@ for i = 1:10
     imusub.read(10, false);
 end
 
-samples = 2400; tstart = tic;
+samples = 10000; 
 [odomidx, imuidx, erridx] = deal(1);
-[agvchx, mmthx, erothx, pos_odom, agv_odom, vel_odom] = deal(zeros(3, samples));
+[agvdhx, mmthx, erothx, pos_odom, agv_odom, vel_odom, eagvhx] = deal(zeros(3, samples));
 [timehx, forcehx, odom_time, imu_time] = deal(zeros(1, samples));
-[rotchx, rothx] = deal(zeros(3, 3, samples));
+[rotdhx, rothx] = deal(zeros(3, 3, samples));
 [pwmhx] = deal(zeros(4, samples)); 
 
-posd = @(time) [0; 0; 1.0];
-veld = @(time) [0; 0; 0];
-accd = @(time) [0; 0; 0];
-hdgd = 0; 
+trajectory = @(time) trval(time, 0: 2, tau, dcx, dcy, dcz, dcyaw);
+hdgd = 0; tstart = tic;  
 
 for idx = 1: samples
-
-%  if idx == 700, hdgd = pi-0.01; end
-  if idx == 700, posd = @(time) [2.0; 2.0; 3.0]; end 
 
   % here we're entering the data collection cycle. first we attempt to get a message from the odometry
   % subscriber (persumed equivalent to the waitForMessage method), with a maximum waiting time of
@@ -94,51 +89,53 @@ for idx = 1: samples
   if ~isempty(odom_msg) % MODIFIED && ~isempty(imu_msg) 
 
     time = toc(tstart); erridx = erridx + 1; agv = agv_odom(:, odomidx - 1); rot = rothx(:, :, odomidx - 1);
+    [xt, yt, zt, yawt] = trajectory(time); tt = [xt', yt', zt']; posd = tt(1, :)'; veld = tt(2, :)'; accd = tt(3, :)'; hdgd = yawt(1);
     % here we're implementing a non-linear controller as described in: v. position controlled flight mode, 
     % control of complex maneuvers for a quadrotor uav using geometric methods on se(3). to get started,  
     % calculate the position and velocity errors, in equation 17 and 18.  
 
-    epos = pos_odom(:, odomidx - 1) - posd(time); 
-    evel = vel_odom(:, odomidx - 1) - veld(time);
+    epos = pos_odom(:, odomidx - 1) - posd; 
+    evel = vel_odom(:, odomidx - 1) - veld;
 
     % there are four variables to be controlled: x, y, z, yaw. in position controlled flight mode,
-    % x, y, z are controlled by design; to properly control yaw, we need to find an appropriate b1c,
-    % in equation 22, that is orthogonal to b3c and pointing to the desired heading; then, to calculate
+    % x, y, z are controlled by design; to properly control yaw, we need to find an appropriate b1d,
+    % in equation 22, that is orthogonal to b3d and pointing to the desired heading; then, to calculate
     % hat computed omega, we need to take the differentiation of the computed rotation matrix. 
 
-    b3c = - kpos * epos - kvel * evel + [0; 0; par.gravity] + accd(time); b3c = b3c / norm(b3c);
-    b1c = - cross(b3c, cross(b3c, [cos(hdgd); sin(hdgd); 0])); b1c = b1c / norm(b1c); 
-    b2c = cross(b3c, b1c); rotc = [b1c, b2c, b3c];
+    b3d = - kpos * epos - kvel * evel + [0; 0; par.gravity] + accd; b3d = b3d / norm(b3d);
+    b1d = - cross(b3d, cross(b3d, [cos(hdgd); sin(hdgd); 0])); b1d = b1d / norm(b1d); 
+    b2d = cross(b3d, b1d); rotd = [b1d, b2d, b3d];
 
-    drotc = (rotc - rotchx(:, :, erridx - 1)) / (time - timehx(erridx - 1)); 
-    agvc = vee(rotc' * drotc); dagvc = (agvc - agvchx(:, erridx - 1)) / (time - timehx(erridx - 1)); 
+    drotd = (rotd - rotdhx(:, :, erridx - 1)) / (time - timehx(erridx - 1)); 
+    agvd = vee(rotd' * drotd); dagvd = (agvd - agvdhx(:, erridx - 1)) / (time - timehx(erridx - 1)); 
 
     % the following are implementations for equation 19 and 20. the errors for rotational matrix (erot)
     % and angular velocity (eagv) are computed, and the control expressions for force and moments are
     % evaluated. actually i believe that everybody can figure this out, but since they look totally messy,
     % i'm just writing some comments to make the code structure look slightly better. 
 
-    erot = vee(rotc' * rot - rot' * rotc) / 2.0; eagv = agv - rot' * rotc * agvc;
-    force = - par.mass * (kpos * epos + kvel * evel - [0; 0; par.gravity] - accd(time))' * rot(:, 3);
+    erot = vee(rotd' * rot - rot' * rotd) / 2.0; eagv = agv - rot' * rotd * agvd;
+    force = - par.mass * (kpos * epos + kvel * evel - [0; 0; par.gravity] - accd)' * rot(:, 3); 
     moments = par.inertia * (- krot * erot - kagv * eagv) + cross(agv, par.inertia * agv) - ... 
-      par.inertia * (hat(agv) * rot' * rotc * agvc - rot' * rotc * dagvc); 
+      par.inertia * (hat(agv) * rot' * rotd * agvd - rot' * rotd * dagvd); 
 
     % now we have the needed force and moments. the next step is to compute the thrusts for each individual motor,
     % compute the corresponding pulse-width modulation (pwm) parameters, and publish some command. 
 
     rotorspds = sqrt(max(inv(mixer) * [force; moments], 0));
     pulsewds = rotorspds * (par.pwm.high - par.pwm.low) / par.pwm.rpm_scale + par.pwm.low; 
-    pulsewds = max(min(pulsewds, par.pwm.high), par.pwm.low);  
+    pulsewds = max(min(pulsewds, par.pwm.high), par.pwm.low);
 
     pwmmsg.header.stamp = time;
     pwmmsg.motor_pwm = pulsewds;
     pwmpub.publish(pwmmsg);
 
-    % after dust's settled let's preserve a part of the history. states that must be saved include agvchx
-    % or the computed angular velocity, rotchx, or the computed rotational matrix, and time. 
+    % after dust's settled let's preserve a part of the history. states that must be saved include agvdhx
+    % or the computed angular velocity, rotdhx, or the computed rotational matrix, and time. 
 
-    agvchx(:, erridx) = agvc; timehx(erridx) = time; rotchx(:, :, erridx) = rotc; pwmhx(:, erridx) = pulsewds;
-    mmthx(:, idx) = moments; erothx(:, idx) = erot; rothx(:, :, erridx) = rot; forcehx(erridx) = force; 
+    agvdhx(:, erridx) = agvd; timehx(erridx) = time; rotdhx(:, :, erridx) = rotd; pwmhx(:, erridx) = pulsewds;
+    mmthx(:, idx) = moments; erothx(:, erridx) = erot; rothx(:, :, erridx) = rot; forcehx(erridx) = force;
+    eagvhx(:, erridx) = eagv;
 
   end
 end
@@ -147,4 +144,6 @@ pwmmsg.header.stamp = timehx(erridx);
 pwmmsg.motor_pwm = deal(0); 
 pwmpub.publish(pwmmsg);
 
-odomsub.disconnect(); imusub.disconnect(); pwmpub.disconnect(); 
+odomsub.disconnect();
+imusub.disconnect():
+pwmpub.disconnect();

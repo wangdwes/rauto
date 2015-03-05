@@ -1,17 +1,22 @@
 
-function mat = fundamat(locs1, locs2) 
+function fm = fundamat(locs1, locs2) 
+ 
+  % we're assuming that locs1 and locs2 are normalized homogeneous coordinates here. 
+  % this may not achieve an opitmal result but it avoids repetitive computation 
+  % of similar data points in the ransac routine. 
+  coeff = horzcat( ... 
+    locs2(:, 1) .* locs1(:, 1), locs2(:, 1) .* locs1(:, 2), locs2(:, 1) .* locs1(:, 3), ...
+    locs2(:, 2) .* locs1(:, 1), locs2(:, 2) .* locs1(:, 2), locs2(:, 2) .* locs1(:, 3), ...
+    locs2(:, 3) .* locs1(:, 1), locs2(:, 3) .* locs1(:, 2), locs2(:, 3) .* locs1(:, 3)); 
 
-% normalize the coordinates to eliminate dc bias
-% and guarantee an average distance to the centroid of sqrt2. 
-[locs1, transmat1] = normalize(locs1);
-[locs2, transmat2] = normalize(locs2);
+  % use eig whenever possible to save computational time.  
+  [eigenvecs, eigenvals] = eig(coeff' * coeff); 
+  [~, index] = min(diag(eigenvals));
+  [fmtilde] = reshape(eigenvecs(:, index), 3, 3)'; 
 
-% each point contributes one linear equation to this system. 
-% note that this seems to be slightly faster than the original kronecker product.  
-coeff = horzcat(bsxfun(@times, locs2(:, 1), locs1), bsxfun(@times, locs2(:, 2), locs1), locs1);
+  % enforce rank-2 constraint. here we have no option but utilizing svd.  
+  [leftevi, eeva, rightevi] = svd(fmtilde); eeva(3, 3) = 0;
+  [fm] = leftevi * eeva * rightevi'; 
 
-% utilize svd to find the elements of the fundamental matrix, 
-% then use it again to enforce the rank-2 constraint.  
-[~, ~, v] = svd(coeff, 0); 
-[u, s, v] = svd(reshape(v(:, end), 3, 3)', 0);
-[mat] = transmat2' * (u * diag([1, 1, 0]) * v') * transmat1;
+end
+  

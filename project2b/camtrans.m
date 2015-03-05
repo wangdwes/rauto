@@ -1,30 +1,42 @@
 
-function [r, t] = camtrans(locs1, locs2, f, intriparams)
+function [rot, tr] = camtrans(locs1, locs2, fm, intriparams)
 
-  w = [0, -1, 0; 1, 0, 0; 0, 0, 1]; 
-  % obtain the essential matrix and its decomposition, 
-  % and assemble all four possible solution for later assessment.  
-  essmat = intriparams' * f *  intriparams; [u, s, v] = svd(essmat);
-  r1 = u * w * v'; r2 = u * w' * v'; t1 = u(:, end); t2 = -u(:, end);
+  w = [0, -1, 0; 1, 0, 0; 0, 0, 1];
+  % obtain the essential matrix and its decomposition. note that if the determinant 
+  % of its resulting rotation matrix is negative, use its inverse for svd.
+  essmat = intriparams' * fm * intriparams; [leftevi, eeva, rightevi] = svd(essmat); 
+  if det(leftevi * w' * rightevi') < 0,  [leftevi, eeva, rightevi] = svd(-essmat); end; 
 
-  % note that f is determined only up a scale, negative or positive. 
-  % there is nothing much we can do on that part, but the rotation matrix
-  % is actually characterized as orthogonal with determinant 1.  
-  r1 = r1 * sign(det(r1)); r2 = r2 * sign(det(r2)); 
+  % assemble all four possible solutions for later assessment. 
+  % note that taking the third column of v produces a different result, but still correct.
+  rot1 = leftevi * w * rightevi'; rot2 = leftevi * w' * rightevi'; 
+  tr1 = vee(rightevi * w * eeva * rightevi')'; tr2 = -tr1; 
 
-  % so there are four possible solutions (candidates) that are compatible with f. 
-  % but there is only one where the points reside in front of both cameras. 
-  % c.f. http://en.wikipedia.org/wiki/Essential_matrix for a method that determines which. 
-  rcandi = cat(3, r1, r1, r2, r2); tcandi = cat(3, t1, t2, t1, t2); loc1h = [locs1(3, :), 1];
-  tnom = rcandi(1, :, :) - locs2(3, 1) * rcandi(3, :, :);
+  % i apologize for producing bad-looking code... but when performance is
+  % the critical factor, we have to make some sacrifice here. 
+  rotcandi = cat(3, rot1, rot1, rot2, rot2); trcandi = cat(3, tr1, tr2, tr1, tr2);
+  tnom = rotcandi(1, :, :) - locs2(1, 1) * rotcandi(3, :, :);
 
-  % here we compute the z's of the 3d point with respective to the frames of each camera.
-  % should they both be positive, we know that the correponding pair constitutes a solution.  
-  z = sum(tnom .* permute(tcandi, [2 1 3]), 2) ./ sum(bsxfun(@times, tnom, loc1h), 2); 
-  zprime = sum(permute(bsxfun(@times, z, loc1h') - tcandi, [2 1 3]) .* rcandi(3, :, :), 2); 
-  selected = squeeze((z > 0) & (zprime > 0)); r = rcandi(:, :, selected); t = tcandi(:, :, selected);
+  % here we're computing the z coordinates of some three-dimensional points with respect
+  % to the frames of each camera. should they both be positive, the corresponding pair is correct. 
+  z = sum(tnom .* trcandi, 2) ./ sum(bsxfun(@times, tnom, locs1(1, :)), 2);
+  zprime = sum((bsxfun(@times, z, locs1(1, :)) - trcandi) .* rotcandi(3, :, :), 2);
+  selected = squeeze(z > 0 & zprime > 0); 
+
+  % obtain the correct combination of translation and rotation.  
+  rot = rotcandi(:, :, selected);
+  tr = squeeze(trcandi(:, :, selected))';
+
+  % if this happens we're doomed.
+  assert(sum(selected) == 1, 'There are %d valid camera transformations', sum(selected));
 
 end
+
+
+
+
+
+
 
 
 

@@ -1,32 +1,33 @@
 
-function [bestF, inliers] = ransacf(matches, locs1, locs2, nIter, tol)
+function [bestf, inliers] = ransacf(matches, locs1, locs2, maxiter, tol)
 
-  % this must be initialized for obvious reason. 
-  % by the way, 200 and 1 are reasonable values for nIter and tol. 
-  inliers = zeros(size(matches, 1), 1); bestF = eye(3);
+  % note that bestf cannot be initialized to eye. 
+  matchcount = size(matches, 1); inliers = zeros(matchcount, 1); bestf = diag([1, 1, 0]);
+  locs1match = locs1(matches(:, 1), :); locs2match = locs2(matches(:, 2), :); 
 
-  for iter = 1: nIter
+  for index = 1: maxiter,
 
     % randomly sample eight point pairs (correspondences) each time,
-    % and compute the corresponding fundamental matrix.  
-    matchsel = matches(randperm(size(matches, 1), 8), :);
-    f = fundamat(locs1(matchsel(:, 1), :), locs2(matchsel(:, 2), :)); 
+    % and compute the corresponding fundamential matrix. 
+    matchsel = matches(randperm(matchcount, 8), :);
+    f = fundamat(locs1(matchsel(:, 1), :), locs2(matchsel(:, 2), :));
 
-    % compute the distance and see if we have come cross a better solution.
-    % note that this statement can be re-written to be slightly more efficient.
-    locs1match = locs1(matches(:, 1), :); locs2match = locs2(matches(:, 2), :);
-    dists = abs(diag([locs2match, ones(size(locs2match, 1), 1)] * f * ...
-      [locs1match'; ones(1, size(locs1match, 1))]));
+    % compute the sampson distances as our error metrics. 
+    normfac1 = locs1match * f'; normfac2 = locs2match * f;
+    normfac1 = [normfac1(:, 1) ./ normfac1(:, 3), normfac1(:, 2) ./ normfac1(:, 3)]; 
+    normfac2 = [normfac2(:, 1) ./ normfac2(:, 3), normfac2(:, 2) ./ normfac2(:, 3)]; 
+    dists = abs(sum(locs2match * f .* locs1match, 2) .^ 2 ./ ...
+      (normfac1(:, 1) .^ 2 + normfac1(:, 2) .^ 2 + ...
+       normfac2(:, 1) .^ 2 + normfac2(:, 2) .^ 2)); 
 
-    % if there are more inliers, we'll take it.  
-    if (sum(inliers) < sum(dists < tol)),
-      bestF = f; inliers = dists < tol; end
+    % if there're more inliers and previously stored, take it. 
+    if (sum(inliers) < sum(dists < tol)), inliers = dists < tol; end
 
   end 
-
-  % c.f.: http://en.wikipedia.org/wiki/RANSAC 
-  % the model may be improved by reestimating it using all members of the consensus set.
-  ilmatches = matches(inliers, :); 
-  bestF = fundamat(locs1(ilmatches(:, 1), :), locs2(ilmatches(:, 2), :));
+  
+  % the model may be improved by re-restimating it
+  % using all members of the consensus set.
+  ilmatches = matches(inliers, :);
+  bestf = fundamat(locs1(ilmatches(:, 1), :), locs2(ilmatches(:, 2), :)); 
 
 end

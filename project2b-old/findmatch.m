@@ -14,7 +14,7 @@ function [locs1, locs2, bestF] = findmatch(im1, im2)
 
   % run the ransac routine to get the best fundamental matrix, 
   % then find out the correspondences that produce this matrix.  
-  [bestF, inliers] = ransacf(matches, locs1, locs2, 200, 1e-1);
+  [bestF, inliers] = ransacf(matches, locs1, locs2, 300, 1e-3);
   ilmatches = matches(inliers, :);
   locs1 = locs1(ilmatches(:, 1), :);
   locs2 = locs2(ilmatches(:, 2), :);

@@ -2,17 +2,16 @@
 function [locs1, locs2, bestf] = findmatches(feats1, vpts1, feats2, vpts2)
 
   % find the matched features and retrieve their locations.
-  [matches] = matchFeatures(feats1, feats2);
-  [locs1, transmat1] = normalize(vpts1.Location);
-  [locs2, transmat2] = normalize(vpts2.Location);
+  [matches] = matchFeatures(feats1, feats2); 
+  [locs1, transmat1] = normalize(vpts1.Location(matches(:, 1), :));
+  [locs2, transmat2] = normalize(vpts2.Location(matches(:, 2), :));
 
   % invoke the ransac routine to find the fundamental matrix.  
-  [bestf, inliers] = ransacf(matches, locs1, locs2, 200, 1e-3);
-  ilmatches = matches(inliers, :);
-  locs1 = locs1(ilmatches(:, 1), :);
-  locs2 = locs2(ilmatches(:, 2), :);
- 
-  % de-normalize this.  
+  [bestf, inliers] = ransacf(locs1, locs2, 200, 1e-6);
+  [locs1, locs2] = deal(locs1(inliers, :) * inv(transmat1)', ...
+                        locs2(inliers, :) * inv(transmat2)');
+
+  % de-normalize the fundamental matrix.  
   bestf = transmat2' * bestf * transmat1; 
 
 end

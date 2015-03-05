@@ -1,33 +1,33 @@
 
-function [bestf, inliers] = ransacf(matches, locs1, locs2, maxiter, tol)
+function [bestf, inliers] = ransacf(locs1, locs2, maxiter, tol)
 
-  % note that bestf cannot be initialized to eye. 
-  matchcount = size(matches, 1); inliers = zeros(matchcount, 1); bestf = diag([1, 1, 0]);
-  locs1match = locs1(matches(:, 1), :); locs2match = locs2(matches(:, 2), :); 
+  % such that the returning arguments are always assigned. 
+  matchcount = size(locs1, 1);
+  inliers = false(matchcount, 1); bestf = diag([1 1 0]);
 
   for index = 1: maxiter,
 
     % randomly sample eight point pairs (correspondences) each time,
-    % and compute the corresponding fundamential matrix. 
-    matchsel = matches(randperm(matchcount, 8), :);
-    f = fundamat(locs1(matchsel(:, 1), :), locs2(matchsel(:, 2), :));
+    % and compute the corresponding fundamental matrix.  
+    selected = randperm(matchcount, 8);
+    f = fundamat(locs1(selected, :), locs2(selected, :)); 
 
-    % compute the sampson distances as our error metrics. 
-    normfac1 = locs1match * f'; normfac2 = locs2match * f;
-    normfac1 = [normfac1(:, 1) ./ normfac1(:, 3), normfac1(:, 2) ./ normfac1(:, 3)]; 
-    normfac2 = [normfac2(:, 1) ./ normfac2(:, 3), normfac2(:, 2) ./ normfac2(:, 3)]; 
-    dists = abs(sum(locs2match * f .* locs1match, 2) .^ 2 ./ ...
-      (normfac1(:, 1) .^ 2 + normfac1(:, 2) .^ 2 + ...
-       normfac2(:, 1) .^ 2 + normfac2(:, 2) .^ 2)); 
+    % compute the sampson distances (first-order geometric error) as our error metrics.
+    % note that the third column of locs1 and locs2 should always be one.  
+    pd1 = locs1 * f'; pd2 = locs2 * f; 
+    dists = sum(locs2 * f .* locs1, 2) .^ 2 ./ ...
+      (pd1(:, 1) .^ 2 + pd1(:, 2) .^ 2 + ... 
+       pd2(:, 1) .^ 2 + pd2(:, 2) .^ 2); 
 
     % if there're more inliers and previously stored, take it. 
-    if (sum(inliers) < sum(dists < tol)), inliers = dists < tol; end
+    if sum(inliers) < sum(dists < tol), 
+      inliers = dists < tol; 
+    end
 
   end 
-  
+
+  bestf = fundamat(locs1(inliers, :), locs2(inliers, :)); 
   % the model may be improved by re-restimating it
   % using all members of the consensus set.
-  ilmatches = matches(inliers, :);
-  bestf = fundamat(locs1(ilmatches(:, 1), :), locs2(ilmatches(:, 2), :)); 
 
 end

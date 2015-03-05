@@ -1,6 +1,8 @@
 
 function mat = fundamat(locs1, locs2) 
 
+mat = estimateFundamentalMatrix(locs1, locs2);
+
 % normalize the coordinates to eliminate dc bias
 % and guarantee an average distance to the centroid of sqrt2. 
 [locs1, transmat1] = normalize(locs1);

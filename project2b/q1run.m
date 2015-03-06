@@ -12,19 +12,31 @@ rrot = eye(3);
 [im1, feats1, vpts1] = imload(left_image_names{1});
 for index = 2: length(left_image_names)
 
+%  [im1, feats1, vpts1] = imload(left_image_names{index - 1});
+%  [im2, feats2, vpts2] = imload(left_image_names{index});
+
   % it's hard to implement rolling array here, so we use the hard way. 
   if mod(index, 2) == 0, 
     [im2, feats2, vpts2] = imload(left_image_names{index});
     [locs1, locs2, fm] = findmatches(feats1, vpts1, feats2, vpts2);  
   else
     [im1, feats1, vpts1] = imload(left_image_names{index});
-    [locs2, locs1, fm] = findmatches(feats2, vpts2, feats1, vpts1);
+    [locs1, locs2, fm] = findmatches(feats2, vpts2, feats1, vpts1);
   end
 
-  [rot, tr] = camtrans(locs1, locs2, fm, intriparams);
-  points(:, index) = point; point = rot * (point - tr); index
+  locs1r = bsxfun(@rdivide, locs1(:, 1: 3), locs1(:, 3));
+  locs2r = bsxfun(@rdivide, locs2(:, 1: 3), locs2(:, 3));
+
+%  showMatchedFeatures(im1, im2, locs1r(:, 1: 2), locs2r(:, 1: 2));
+%  title(num2str(index));
+%  waitforbuttonpress;
+
+  [rot, tr] = camtrf(locs1r, locs2r, fm, intriparams);
+  points(:, index) = point; point = rot * (point + tr); index
 
   rrot = rrot * rot; 
+
+%  thetas(:, index) = rotationMatrix2eulerAngles(rrot);
 
   thetas(1, index) = atan2(rrot(3, 2), rrot(3, 3));
   thetas(2, index) = atan2(-rrot(3, 1), sqrt(rrot(3, 2)^2+rrot(3,3)^2));

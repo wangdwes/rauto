@@ -7,7 +7,7 @@ function [locs1, locs2, bestf] = findmatches(feats1, vpts1, feats2, vpts2)
   [locs2, transmat2] = normalize(vpts2.Location(matches(:, 2), :));
 
   % invoke the ransac routine to find the fundamental matrix.  
-  [bestf, inliers] = ransacf(locs1, locs2, 200, 1e-6);
+  [bestf, inliers] = ransacf(locs1, locs2, 500, 1e-3); sum(inliers)
   [locs1, locs2] = deal(locs1(inliers, :) * inv(transmat1)', ...
                         locs2(inliers, :) * inv(transmat2)');
 

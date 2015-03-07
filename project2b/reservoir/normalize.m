@@ -10,7 +10,7 @@ function [normcoords, transmat] = normalize(coords)
   transmat = [scale, 0, -scale * centers(1); 0, scale, -scale * centers(2); 0, 0, 1];
   
   % homogenize the coordinates and apply the transformation.
-  normcoords = coords * transmat'; 
+  normcoords = [coords, ones(size(coords, 1), 1)] * transmat'; 
 
 end
 

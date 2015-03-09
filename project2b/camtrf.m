@@ -4,9 +4,9 @@ function [rot, tr] = camtrf(locs1, locs2, fm, intriparams)
   w = [0, -1, 0; 1, 0, 0; 0, 0, 1];
   % the literature proposes a sr decomposition for an essential matrix with two identical 
   % and one zero eigenvalues, but our matrix obtained from the fundamental matrix doesn't
-  % necessarily observe that constraint. therefore, we try to enforce it before proceeding.
-  [u, s, v] = svd(intriparams' * fm * intriparams); em = u * diag([1 1 0]) * v';
-  [u, s, v] = svd(em); if det(u*w'*v') < 0, [u, s, v] = svd(-em); end;
+  % necessarily observe that constraint. therefore, we try to enforce it before proceeding. 
+  [u, s, v] = svd(intriparams' * fm * intriparams); eeva = (s(1) + s(5)) * 0.5; em = u * diag([eeva eeva 0]) * v'; 
+  [u, s, v] = svd(em); if det(u*w'*v') < 0, [u, s, v] = svd(-em); end; % ^ result 11.1
   [rot1, rot2, tr1] = deal(u*w*v', u*w'*v', u(:, end)'); tr2 = -tr1;
 
   % here we have four possible combinations of rotation matrix and translation vector.

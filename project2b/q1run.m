@@ -18,6 +18,7 @@ for index = 2: count,
     [locs1, locs2, fm] = optmatch(f2, vpts2, f1, vpts1);
   end
 
+%{
   if mod(index, 2) == 0,
     showMatchedFeatures(im1, im2, locs1(:, 1: 2), locs2(:, 1: 2)); 
     waitforbuttonpress;
@@ -25,6 +26,7 @@ for index = 2: count,
     showMatchedFeatures(im2, im1, locs1(:, 1: 2), locs2(:, 1: 2)); 
     waitforbuttonpress;
   end
+%}
 
   % find the rotation and translation between successive frames.
   % and store a trajectory of the camera origins.  

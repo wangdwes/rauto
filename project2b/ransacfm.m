@@ -13,16 +13,26 @@ function [bestfm, inliers] = ransacfm(locs1, locs2, maxiter, tol)
     selected = randperm(matchcount, 8);
     fm = fundamat(locs1(selected, :), locs2(selected, :)); 
 
+    [locs3d, cameramat1, cameramat2] = triangulate(locs1, locs2, fm);
+
+    err1 = locs3d * cameramat1'; err1 = bsxfun(@rdivide, err1, err1(:, 3));
+    err1 = err1 - locs1; err1 = err1(:, 1) .^ 2 + err1(:, 2) .^ 2; 
+
+    err2 = locs3d * cameramat1'; err2 = bsxfun(@rdivide, err2, err2(:, 3)); 
+    err2 = err2 - locs2; err2 = err2(:, 1) .^ 2 + err2(:, 2) .^ 2; 
+
+    dists = err1 + err2;
+
     % compute the sampson distances (first-order geometric error) as our error metrics.
-    leftmulti = locs1 * fm'; rightmulti = locs2 * fm;
-    dists = sum(rightmulti .* locs1, 2) .^ 2 ./ ( ...
-      leftmulti(:, 1) .^ 2 + rightmulti(:, 1) .^ 2 + ...
-      leftmulti(:, 2) .^ 2 + rightmulti(:, 2) .^ 2);
+%    leftmulti = locs1 * fm'; rightmulti = locs2 * fm;
+%    dists = sum(rightmulti .* locs1, 2) .^ 2 ./ ( ...
+%      leftmulti(:, 1) .^ 2 + rightmulti(:, 1) .^ 2 + ...
+%      leftmulti(:, 2) .^ 2 + rightmulti(:, 2) .^ 2);
 
     niter = niter + 1;
     % if there're more inliers than previously stored, take it. 
-    if sum(inliers) < sum(dists < tol),
-      inliers = dists < tol; 
+    if sum(inliers) < sum(dists < tol ^ 2),
+      inliers = dists < tol;
       % a routine that adaptively changes the maximum number of iterations
       % based on our desired confidence level and ratio of inliers.
       ratio = sum(inliers) / matchcount;

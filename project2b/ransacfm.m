@@ -18,10 +18,10 @@ function [bestfm, inliers] = ransacfm(locs1, locs2, maxiter, tol)
     err1 = locs3d * cameramat1'; err1 = bsxfun(@rdivide, err1, err1(:, 3));
     err1 = err1 - locs1; err1 = err1(:, 1) .^ 2 + err1(:, 2) .^ 2; 
 
-    err2 = locs3d * cameramat1'; err2 = bsxfun(@rdivide, err2, err2(:, 3)); 
+    err2 = locs3d * cameramat2'; err2 = bsxfun(@rdivide, err2, err2(:, 3)); 
     err2 = err2 - locs2; err2 = err2(:, 1) .^ 2 + err2(:, 2) .^ 2; 
 
-    dists = err1 + err2;
+    dists = err1 + err2; 
 
     % compute the sampson distances (first-order geometric error) as our error metrics.
 %    leftmulti = locs1 * fm'; rightmulti = locs2 * fm;

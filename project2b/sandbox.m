@@ -10,4 +10,5 @@ locs2 = vpts2(matches(:, 2), :);
 [f, inliers] = ransacfm(locs1, locs2, 500, 0.01);
 
 tic; triangulate(locs1, locs2, f, 'optimal'); toc;
+tic; triangulate(locs1, locs2, f, 'sampson'); toc;
 tic; triangulate(locs1, locs2, f); toc; 

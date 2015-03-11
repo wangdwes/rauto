@@ -52,6 +52,26 @@ function [locs3d, cameramat1, cameramat2] = triangulate(locs1, locs2, fm, method
     end
   end
 
+  % alternatively, if the user requests some level of approximation but wishes to avoid 
+  % too much computational cost, the sampson approximation (first-order geometric correction) 
+  % may be used. see section 12.4 in the literature for more details.  
+  if nargin == 4 & strcmp(method, 'sampson')
+
+    % compute the coefficients. see page 315 for the mathematical derivation. 
+    leftmulti = locs1 * fm'; rightmulti = locs2 * fm; 
+    coeff = sum(rightmulti .* locs1, 2) ./ ...
+      (leftmulti(:, 1) .^ 2 + rightmulti(:, 1) .^ 2 + ...
+       leftmulti(:, 2) .^ 2 + rightmulti(:, 2) .^ 2); 
+  
+    % apply the first-order correction to the original coordinates.
+    % note that this only works well when the correction is expected to be small.
+    locs1(:, 1) = locs1(:, 1) - rightmulti(:, 1) .* coeff; 
+    locs1(:, 2) = locs1(:, 2) - rightmulti(:, 2) .* coeff; % alternatively, use bsxfun.
+    locs2(:, 1) = locs2(:, 1) - leftmulti(:, 1) .* coeff;
+    locs2(:, 2) = locs2(:, 2) - leftmulti(:, 2) .* coeff; 
+ 
+  end
+
   % find out the camera matrices.   
   [leftevi, ~, rightevi] = svd(fm);
   [cameramat1] = horzcat(eye(3), zeros(3, 1));

@@ -1,5 +1,5 @@
 
-function cm = cameramat(locs3d, locs2d, method) 
+function [cm, inliers] = cameramat(locs3d, locs2d, method) 
 
   % normalize the points as suggested in hartley, zisserman.  
   [locs3d, transmat3d] = normalize(locs3d);
@@ -7,7 +7,7 @@ function cm = cameramat(locs3d, locs2d, method)
 
   % write something random to make this look well documented.  
   count = size(locs3d, 1); inliers = false(count, 1);
-  cm = eye(3, 4); niter = 0; maxiter = 200; tol = 1e-3;   
+  cm = eye(3, 4); niter = 0; maxiter = 200; tol = 1e-4;
 
   % iterate until the maximum number of iterations is hit. 
   while niter < maxiter, 

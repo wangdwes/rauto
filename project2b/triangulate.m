@@ -1,8 +1,8 @@
 
 function locs3d = triangulate(locs1, locs2, cameramat1, cameramat2, method)
 
-  % adopted from fundfromcameras - fundamental matrix from camera matrices. 
-  % http://www.csse.uwa.edu.au/~pk/research/matlabfns/Projective/fundfromcameras.m
+  % adopted from table 9.1, hartley and zisserman.
+  % computation of fundamental matrix from camera matrices. 
   fm = hat(cameramat2 * null(cameramat1)) * cameramat2 * pinv(cameramat1);
  
   % implemented here is the 'optimal triangulation method', introduced as algorithm 12.1 in the literature.
@@ -84,13 +84,13 @@ function locs3d = triangulate(locs1, locs2, cameramat1, cameramat2, method)
     % form the system of linear equations.
     coeff = vertcat( ...
       locs1(index, 1) * cameramat1(3, :) - cameramat1(1, :), ... 
-      locs1(index, 2) * cameramat1(3, :) - cameramat1(2, :), ... 
+      locs1(index, 2) * cameramat1(3, :) - cameramat1(2, :), ...
       locs2(index, 1) * cameramat2(3, :) - cameramat2(1, :), ... 
       locs2(index, 2) * cameramat2(3, :) - cameramat2(2, :)); 
 
     % solve for the location of the three-dimensional point.  
     [~, ~, eigenvecs] = svd(coeff);
-    [locs3d(index, :)] = eigenvecs(:, end)' / eigenvecs(4, end); 
+    [locs3d(index, :)] = eigenvecs(:, end)' / eigenvecs(end); 
 
   end
 end

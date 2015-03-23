@@ -1,6 +1,6 @@
 
 % use fullfile instead of slashes to ensure cross-platform compatibility.  
-load(fullfile('sensor', 'hand_carry.mat'));
+load(fullfile('sensor_data', 'hand_carry.mat'));
 load(fullfile('assets', 'useful.mat')); translation = [-0.1621, 0, 0]';
 
 [point] = zeros(3, 1); count = length(left_image_names);
@@ -30,7 +30,7 @@ for index = 1: count - 1, waitbar(index / (count - 1), h);
 
   % ...
   rot = extriparams(:, 1: 3); tr = extriparams(:, 4); 
-  points(:, index) = point; point = inv(rot) * (point - tr); 
+  points(:, index) = point; point = rot * point + tr; 
 
 end
 close(h); 

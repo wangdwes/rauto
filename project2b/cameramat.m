@@ -23,7 +23,7 @@ function [cm, inliers] = cameramat(locs3d, locs2d, method)
       inliers = dists < tol;
       % implemented here is a sub-routine that updates the number of iterations
       % based on our desired confidence level and ratio of inliers.
-      ratio = sum(inliers) / count;
+      ratio = sum(inliers) / count; 
       if ratio > 1 - eps, maxiter = 1;
       else ratiop6 = ratio ^ 6; 
         maxiter = min(maxiter, floor(2 * log(10) / ratiop6));

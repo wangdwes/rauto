@@ -1,5 +1,5 @@
 
-function locs3d = triangulate(locs1, locs2, cameramat1, cameramat2, method)
+function locs3d = triangulate(cameramat1, locs1, cameramat2, locs2, method)
 
   % adopted from table 9.1, hartley and zisserman.
   % computation of fundamental matrix from camera matrices. 

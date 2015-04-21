@@ -1,0 +1,1 @@
+/usr/bin/c++       CMakeFiles/xytheta.dir/xytheta.cpp.o  -o xytheta  -L/usr/local/lib -rdynamic -lsbpl -Wl,-rpath,/usr/local/lib 

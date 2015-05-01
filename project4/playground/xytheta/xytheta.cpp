@@ -55,11 +55,11 @@ void initializePlanner(SBPLPlanner*& planner,
     // set planner properties
     if (planner->set_start(start_id) == 0) {
         printf("ERROR: failed to set start state\n");
-        throw new SBPL_Exception();
+        throw SBPL_Exception();
     }
     if (planner->set_goal(goal_id) == 0) {
         printf("ERROR: failed to set goal state\n");
-        throw new SBPL_Exception();
+        throw SBPL_Exception();
     }
     planner->set_initialsolution_eps(initialEpsilon);
     planner->set_search_mode(bsearchuntilfirstsolution);

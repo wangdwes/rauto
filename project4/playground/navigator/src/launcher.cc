@@ -28,9 +28,8 @@
 
 int main(int argc, char *argv[])
 {
-
-  // create an instance and see what happens. 
-  evl::Navigator navigator(-0.4, 0.4, -0.4, 0.4, 0.025);
+  
+  evl::Navigator navigator(-0.4, 0.4, -0.4, 0.4, 0.025); 
   int a = navigator.createObstacle(0.1, 0.1, 0.08);
   int b = navigator.createObstacle(0.1, 0.05, 0.1);
   navigator.updateObstacle(a, 0.05, -0.0); 
@@ -38,7 +37,7 @@ int main(int argc, char *argv[])
   navigator.setGoal(0.2, 0.2); 
   navigator.plan(2.0);
 
-  std::vector<std::vector<int> > arena = navigator.retrieveArenaSnapshot(); 
+  std::vector<std::vector<int> > arena = navigator.getArena(); 
   for (int y = 0; y < arena.size(); y++) {
     for (int x = 0; x < arena.front().size(); x++) 
       std::cout << arena[x][y] << ','; 
@@ -48,7 +47,7 @@ int main(int argc, char *argv[])
   int d = navigator.createObstacle(0.4, 0.05, 0.2);
   navigator.plan(2.0); 
 
-  arena = navigator.retrieveArenaSnapshot(); 
+  arena = navigator.getArena(); 
   for (int y = 0; y < arena.size(); y++) {
     for (int x = 0; x < arena.front().size(); x++) 
       std::cout << arena[x][y] << ','; 

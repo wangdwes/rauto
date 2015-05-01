@@ -227,7 +227,7 @@ namespace evl
   }
 
   // retrieve the current cost map and the most recently planned path. 
-  std::vector<std::vector<int> > Navigator::retrieveArenaSnapshot(bool path_overlay)
+  std::vector<std::vector<int> > Navigator::getArena(bool path_overlay)
   {
     // initialize a data structure for our matrix. 
     std::vector<std::vector<int> > arena;

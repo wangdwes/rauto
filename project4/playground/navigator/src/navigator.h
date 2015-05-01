@@ -73,7 +73,9 @@ namespace evl
     /** \brief Run the planner for some allotted time and retrieve the solution. */
     virtual std::vector<std::pair<double, double> > plan(double allotted_time); 
     /** \brief Retrieve the arena with optional most recently planned path overlay. */
-    virtual std::vector<std::vector<int> > retrieveArenaSnapshot(bool path_overlay = true);
+    virtual std::vector<std::vector<int> > getArena(bool path_overlay = true);
+
+  protected: 
 
     /** \brief Convert x-coordinate from world frame to discretized arena frame. */ 
     inline int toArenaX(double x) const { return CONTXY2DISC(x - x_lower_limit_, granularity_); } 
@@ -83,8 +85,6 @@ namespace evl
     inline double toWorldX(int x) const { return DISCXY2CONT(x, granularity_) + x_lower_limit_; }
     /** \brief Convert y-coordinate from the discretized arena frame to the world frame. */
     inline double toWorldY(int y) const { return DISCXY2CONT(y, granularity_) + y_lower_limit_; } 
-
-  protected: 
 
     /** \brief Prepare a list of cells that constitute a circular obstacle. */ 
     virtual std::vector<nav2dcell_t> prepareCells(double x, double y, double radius);

@@ -1,1 +1,0 @@
-mex navigator_mex.cc navigator.cc  -L../build/libnavigator -I. -lsbpl -L/usr/local/lib/libsbpl

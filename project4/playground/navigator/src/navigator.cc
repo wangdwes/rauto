@@ -35,7 +35,8 @@ namespace evl
       x_upper_limit_(x_upper_limit),
       y_lower_limit_(y_lower_limit),  
       y_upper_limit_(y_upper_limit),
-      granularity_(granularity)
+      granularity_(granularity),
+      obstacle_count_(0)
   { 
     // size of the discretized arena. 
     width_ = toArenaX(x_upper_limit) + 1; 
@@ -137,7 +138,7 @@ namespace evl
       std::vector<nav2dcell_t> template_cells; // storage for the cell coordinates.
       for (int y = -discretized_radius; y <= discretized_radius; ++y)
         for (int x = -discretized_radius; x <= discretized_radius; ++x)
-          if (x * x + y * y <= discretized_radius_squared) // cell within or on the circle?
+          if (x * x + y * y < discretized_radius_squared) // cell within or on the circle?
             template_cells.push_back(nav2dcell_t(x, y)); // in which case save this cell. 
 
       // insert the generated template of cells into storage. 
@@ -246,6 +247,15 @@ namespace evl
     return arena; 
   }
 
+  // in case you haven't saved them in the first place.  
+  std::vector<int> Navigator::getIdentifiers()
+  {
+    std::vector<int> identifiers; // the list of identifiers;  
+    for (std::map<int, Obstacle>::const_iterator it = obstacles_.begin(); it != obstacles_.end(); ++it)
+      identifiers.push_back((*it).first);
+    return identifiers;  
+  }
+      
   // set the start and retrieve its corresponding state id. 
   inline void Navigator::setStart(double x, double y) {
     start_state_id_ = environment_->SetStart(toArenaX(x), toArenaY(y)); }

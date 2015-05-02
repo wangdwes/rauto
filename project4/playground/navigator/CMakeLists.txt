@@ -7,8 +7,7 @@ pkg_check_modules(SBPL REQUIRED sbpl)
 include_directories(src ${SBPL_INCLUDE_DIRS})
 link_directories(${SBPL_LIBRARY_DIRS})
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/..)
+
 add_library(navigator SHARED src/navigator.cc)
 target_include_directories(navigator PUBLIC ${SBPL_INCLUDE_DIRS}) 
-
-add_executable(navigator_test src/launcher.cc)
-target_link_libraries(navigator_test LINK_PUBLIC navigator ${SBPL_LIBRARIES})

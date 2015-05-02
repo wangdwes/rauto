@@ -74,6 +74,8 @@ namespace evl
     virtual std::vector<std::pair<double, double> > plan(double allotted_time); 
     /** \brief Retrieve the arena with optional most recently planned path overlay. */
     virtual std::vector<std::vector<int> > getArena(bool path_overlay = true);
+    /** \brief Retrieve the identifiers of active obstacles. */ 
+    virtual std::vector<int> getIdentifiers(); 
 
   protected: 
 
